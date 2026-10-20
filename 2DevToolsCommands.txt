@@ -1,0 +1,137 @@
+GET /_cat/indices?v
+
+# 5. match,term,filter,range,bool = These are most imporant concepts of the elastic for doing the filteration.
+
+# 1. match = It is used to filter the text fields.Not work properly on the keyword fields.
+GET /crud_index/_search
+{
+  "query": {
+    "match": {
+      "name": "temp"
+    }
+  }
+}
+# 2. term = It is used on keyword fields.
+GET /crud_index/_search
+{
+  "query": {
+    "term": {
+      "class": "10"
+    }
+  }
+}
+
+# 3. range = used to find the ranged fileration on numbers like gte,lte,etc.
+# 4. filter = It is an array contains more that one filteration object that contains the term,match,range,etc.
+# 5. bool = used to combined the more than one option ssearch + filteration like "must" with "filteration"
+
+# e.g.
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "name": "nike shoes" } }
+      ],
+      "filter": [
+        { "term": { "brand.keyword": "Nike" } },
+        { "range": { "price": { "lte": 10000 } } }
+      ]
+    }
+  }
+}
+
+# 6. Sorting,pagination,_source = It is generally used for the pagination,soring and what data to return realted topics respectively.
+
+# Pagination = generally used from -> offset, size-> limit
+GET /crud_index/_search
+{
+  "from": 0,
+  "size": 5
+}
+
+# Sorting = Generally takes an array of object.Recommended to do on the keywords.You can also merge with the queries.
+GET /crud_index/_search
+{
+  "query": {
+    "match": {
+      "name": "temp"
+    }
+  },
+  "sort": [
+    { "class": "desc" }
+  ]
+}
+
+# _source = used to include or exclude the fields from the final result.
+GET /crud_index/_search
+{
+  "_source": ["name", "class"]
+}
+GET /crud_index/_search
+{
+  "_source": {
+    "excludes": ["description", "metadata"]
+  }
+}
+
+# Practice 1 = GET /products?search=nike&page=2&limit=10&sort=price
+GET /products/_search
+{
+  "from": 10,
+  "size": 10,
+  "query": {
+    "match": {
+      "name": "nike"
+    }
+  },
+  "sort": [
+    {
+      "price": "asc"
+    }
+  ],
+  "_source": [
+    "name",
+    "price",
+    "brand",
+    "in_stock"
+  ]
+}
+# 2. Practice 2 = GET /products?search=nike&brand=Nike&maxPrice=10000&page=2&limit=10
+GET /products/_search
+{
+  "from": 10,
+  "size": 10,
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "name": "nike" } }
+      ],
+      "filter": [
+        { "term": { "brand.keyword": "Nike" } },
+        { "range": { "price": { "lte": 10000 } } }
+      ]
+    }
+  },
+  "sort": [
+    { "price": "asc" }
+  ]
+}
+
+# 7. Aggregation = It is similar to the groupy,count,etc.Generally used to fetch the total analytical data.
+# It is used to get the each branch count.You can also do some query stuff in it.
+GET /products/_search
+{
+  "size": 0,
+  "aggs": {
+    "brands": {
+      "terms": {
+        "field": "brand.keyword"
+      }
+    }
+  }
+}
+
+# Note = 1. No need to step more time,take help of chatgpt.
+# 2. Never aggregate on text only keyword,numeric or fixed data.
+# 3. Before creating the aggregation make sure your index mapping will be clean and professional enough.While creating the index firstly focus on the index mapping and their fields.
